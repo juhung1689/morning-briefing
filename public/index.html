@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>아침 브리핑</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #0a0a0f; --bg2: #12121a; --bg3: #1a1a26;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f5; --text2: #9090a8; --text3: #5a5a72;
+    --accent: #7c6ff7; --accent2: #4fc3f7;
+    --green: #4ade80; --red: #f87171; --amber: #fbbf24;
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif; min-height: 100vh; padding-bottom: 40px; }
+  .header { padding: 56px 20px 24px; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(10,10,15,0.85); }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+  .time-display { font-size: 13px; color: var(--text2); letter-spacing: 0.05em; }
+  .greeting { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); margin-top: 6px; transition: background 0.3s; }
+  .status-dot.loading { background: var(--amber); animation: pulse 1s infinite; }
+  .status-dot.done { background: var(--green); }
+  .status-dot.error { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .btn-briefing { width: calc(100% - 40px); margin: 0 20px 16px; padding: 18px; background: var(--accent); border: none; border-radius: 16px; color: #fff; font-size: 17px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: opacity 0.2s, transform 0.1s; -webkit-appearance: none; letter-spacing: -0.02em; }
+  .btn-briefing:active { transform: scale(0.97); opacity: 0.85; }
+  .btn-briefing:disabled { opacity: 0.5; }
+  .btn-speak { width: calc(100% - 40px); margin: 0 20px 16px; padding: 14px; background: transparent; border: 1px solid var(--accent); border-radius: 12px; color: var(--accent); font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; -webkit-appearance: none; }
+  .btn-speak:active { opacity: 0.7; }
+  .btn-speak.speaking { color: var(--red); border-color: var(--red); }
+  .section { margin: 0 20px 16px; background: var(--bg2); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; }
+  .section-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .section-icon { font-size: 16px; width: 28px; height: 28px; background: var(--bg3); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--text2); letter-spacing: 0.05em; text-transform: uppercase; }
+  .section-body { padding: 14px 16px; }
+  .skeleton { height: 14px; background: var(--bg3); border-radius: 6px; margin-bottom: 8px; animation: shimmer 1.5s infinite; }
+  .skeleton.w80 { width: 80%; } .skeleton.w60 { width: 60%; }
+  @keyframes shimmer { 0%{opacity:0.4} 50%{opacity:0.8} 100%{opacity:0.4} }
+  .weather-main { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+  .weather-icon { font-size: 48px; }
+  .weather-temp { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .weather-desc { font-size: 14px; color: var(--text2); margin-top: 4px; }
+  .weather-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .weather-item { background: var(--bg3); border-radius: 10px; padding: 10px; text-align: center; }
+  .weather-item-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .weather-item-value { font-size: 15px; font-weight: 600; }
+  .outfit-card { background: var(--bg3); border-radius: 12px; padding: 14px; font-size: 15px; line-height: 1.7; color: var(--text2); margin-top: 12px; }
+  .outfit-card strong { color: var(--text); font-weight: 600; }
+  .stock-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .stock-row:last-child { border-bottom: none; }
+  .stock-name { font-size: 14px; font-weight: 600; }
+  .stock-ticker { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .stock-right { text-align: right; }
+  .stock-price { font-size: 15px; font-weight: 600; }
+  .stock-change { font-size: 12px; margin-top: 2px; }
+  .up { color: var(--green); } .down { color: var(--red); }
+  .market-summary { background: var(--bg3); border-radius: 12px; padding: 14px; font-size: 14px; line-height: 1.7; color: var(--text2); margin-top: 12px; }
+  .news-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .news-item:last-child { border-bottom: none; }
+  .news-category { font-size: 11px; color: var(--accent2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .news-title { font-size: 14px; font-weight: 600; line-height: 1.5; margin-bottom: 4px; }
+  .news-summary { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .error-msg { color: var(--red); font-size: 14px; padding: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-row">
+    <div>
+      <div class="time-display" id="timeDisplay"></div>
+      <div class="greeting" id="greetingText">좋은 아침입니다 ☀️</div>
+    </div>
+    <div class="status-dot" id="statusDot"></div>
+  </div>
+</div>
+
+<button class="btn-briefing" id="btnBriefing" onclick="startBriefing()">🚴 오늘 브리핑 시작</button>
+<button class="btn-speak" id="btnSpeak" onclick="toggleSpeak()" style="display:none">🔊 음성으로 듣기</button>
+
+<div class="section" id="weatherSection" style="display:none">
+  <div class="section-header"><div class="section-icon">🌤</div><span class="section-title">날씨 & 자전거 추천</span></div>
+  <div class="section-body" id="weatherBody"></div>
+</div>
+<div class="section" id="stockSection" style="display:none">
+  <div class="section-header"><div class="section-icon">📈</div><span class="section-title">미국 주식 / 어제 마감</span></div>
+  <div class="section-body" id="stockBody"></div>
+</div>
+<div class="section" id="newsSection" style="display:none">
+  <div class="section-header"><div class="section-icon">🌍</div><span class="section-title">오늘의 주요 뉴스</span></div>
+  <div class="section-body" id="newsBody"></div>
+</div>
+
+<script>
+const LAT = '37.5665', LON = '126.9780';
+let fullBriefingText = '', isSpeaking = false;
+
+function updateTime() {
+  const now = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  document.getElementById('timeDisplay').textContent =
+    `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 ${days[now.getDay()]}요일  ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const h = now.getHours();
+  document.getElementById('greetingText').textContent =
+    h < 6 ? '새벽 출근이시네요' : h < 10 ? '좋은 아침입니다 ☀️' : h < 14 ? '좋은 오전입니다' : '안녕하세요';
+}
+updateTime(); setInterval(updateTime, 30000);
+
+function setStatus(s) { document.getElementById('statusDot').className = 'status-dot ' + s; }
+function showSkeleton(id) {
+  document.getElementById(id).innerHTML = '<div class="skeleton"></div><div class="skeleton w80"></div><div class="skeleton w60"></div>';
+}
+
+function weatherIcon(id) {
+  if (id>=200&&id<300) return '⛈'; if (id>=300&&id<400) return '🌧';
+  if (id>=500&&id<510) return id===500?'🌦':'🌧'; if (id>=510&&id<600) return '🌨';
+  if (id>=600&&id<700) return '❄️'; if (id>=700&&id<800) return '🌫';
+  if (id===800) return '☀️'; if (id===801) return '🌤'; if (id===802) return '⛅';
+  return '☁️';
+}
+
+function buildOutfit(w) {
+  const layers = w.temp<=0?'패딩, 내복, 두꺼운 장갑':w.temp<=5?'패딩 + 장갑':w.temp<=10?'윈드브레이커 + 긴팔 레이어':w.temp<=15?'얇은 자켓 또는 긴팔':w.temp<=20?'긴팔 + 얇은 바람막이':w.temp<=25?'반팔 또는 얇은 긴팔':'반팔, 자외선 차단 필수';
+  const extra = w.isRain?'🌧 비 예보 — <strong>우비</strong> 꼭 챙기세요':w.wind>7?'💨 강풍 주의 — 방풍 레이어 추천':w.humidity>80?'💧 습도 높음 — 흡습 소재 추천':'🚴 자전거 출근 컨디션 양호';
+  return { layers, extra };
+}
+
+async function startBriefing() {
+  const btn = document.getElementById('btnBriefing');
+  btn.disabled = true; btn.textContent = '브리핑 준비 중...';
+  setStatus('loading');
+  ['weatherSection','stockSection','newsSection'].forEach(id => {
+    document.getElementById(id).style.display = 'block';
+    showSkeleton(id.replace('Section','Body'));
+  });
+
+  const [weatherRes, stockRes, newsRes] = await Promise.allSettled([
+    fetch(`/api/weather?lat=${LAT}&lon=${LON}`).then(r => r.json()),
+    fetch('/api/stocks').then(r => r.json()),
+    fetch('/api/news').then(r => r.json())
+  ]);
+
+  let weatherW = null;
+  if (weatherRes.status === 'fulfilled' && weatherRes.value?.list) {
+    const cur = weatherRes.value.list[0];
+    weatherW = {
+      temp: Math.round(cur.main.temp), feels: Math.round(cur.main.feels_like),
+      humidity: cur.main.humidity, wind: cur.wind.speed.toFixed(1),
+      desc: cur.weather[0].description, icon: weatherIcon(cur.weather[0].id),
+      rain: cur.rain?.['3h'] || 0, isRain: cur.weather[0].id >= 200 && cur.weather[0].id < 700
+    };
+  }
+  renderWeatherUI(weatherW);
+
+  if (stockRes.status === 'fulfilled' && !stockRes.value.error) renderStockUI(stockRes.value);
+  else document.getElementById('stockBody').innerHTML = '<p class="error-msg">주식 정보를 불러오지 못했습니다</p>';
+
+  if (newsRes.status === 'fulfilled' && Array.isArray(newsRes.value)) renderNewsUI(newsRes.value);
+  else document.getElementById('newsBody').innerHTML = '<p class="error-msg">뉴스를 불러오지 못했습니다</p>';
+
+  buildFullBriefing(weatherW, stockRes, newsRes);
+  document.getElementById('btnSpeak').style.display = 'flex';
+  btn.textContent = '🔄 다시 브리핑'; btn.disabled = false;
+  setStatus('done');
+}
+
+function renderWeatherUI(w) {
+  const body = document.getElementById('weatherBody');
+  if (!w) { body.innerHTML = '<p class="error-msg">날씨 정보를 불러오지 못했습니다</p>'; return; }
+  const o = buildOutfit(w);
+  body.innerHTML = `
+    <div class="weather-main"><div class="weather-icon">${w.icon}</div><div>
+      <div class="weather-temp">${w.temp}°</div>
+      <div class="weather-desc">${w.desc} · 체감 ${w.feels}°</div>
+    </div></div>
+    <div class="weather-grid">
+      <div class="weather-item"><div class="weather-item-label">습도</div><div class="weather-item-value">${w.humidity}%</div></div>
+      <div class="weather-item"><div class="weather-item-label">풍속</div><div class="weather-item-value">${w.wind}㎧</div></div>
+      <div class="weather-item"><div class="weather-item-label">강수</div><div class="weather-item-value">${w.rain > 0 ? w.rain.toFixed(1)+'㎜' : '없음'}</div></div>
+    </div>
+    <div class="outfit-card">👔 <strong>옷차림</strong> — ${o.layers}<br>${o.extra}</div>`;
+}
+
+function renderStockUI(d) {
+  const all = [...(d.indices||[]), ...(d.stocks||[])];
+  let html = all.map(s => `
+    <div class="stock-row">
+      <div><div class="stock-name">${s.name}</div><div class="stock-ticker">${s.ticker}</div></div>
+      <div class="stock-right"><div class="stock-price">${s.price}</div><div class="stock-change ${s.direction}">${s.change}</div></div>
+    </div>`).join('');
+  if (d.summary) html += `<div class="market-summary">${d.summary}</div>`;
+  document.getElementById('stockBody').innerHTML = html;
+}
+
+function renderNewsUI(news) {
+  document.getElementById('newsBody').innerHTML = news.map(n => `
+    <div class="news-item">
+      <div class="news-category">${n.category}</div>
+      <div class="news-title">${n.title}</div>
+      <div class="news-summary">${n.summary}</div>
+    </div>`).join('');
+}
+
+function buildFullBriefing(w, stockRes, newsRes) {
+  const now = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  let t = `${now.getMonth()+1}월 ${now.getDate()}일 ${days[now.getDay()]}요일 아침 브리핑입니다.\n\n`;
+  if (w) {
+    const o = buildOutfit(w);
+    t += `오늘 서울 날씨는 기온 ${w.temp}도, 체감 ${w.feels}도, ${w.desc}입니다. 습도 ${w.humidity}퍼센트, 풍속 초속 ${w.wind}미터. 자전거 출근 옷차림으로 ${o.layers}를 추천드립니다. ${w.isRain ? '비 예보가 있으니 우비를 챙기세요.' : ''}\n\n`;
+  }
+  if (stockRes.status === 'fulfilled' && stockRes.value?.summary) {
+    t += `미국 주식 현황입니다. ${stockRes.value.summary}\n\n`;
+  }
+  if (newsRes.status === 'fulfilled' && Array.isArray(newsRes.value)) {
+    t += '오늘의 주요 뉴스입니다. ';
+    newsRes.value.forEach((n, i) => { t += `${i+1}번, ${n.category}. ${n.title}. ${n.summary} `; });
+  }
+  fullBriefingText = t;
+}
+
+function toggleSpeak() {
+  const btn = document.getElementById('btnSpeak');
+  if (isSpeaking) {
+    window.speechSynthesis.cancel(); isSpeaking = false;
+    btn.textContent = '🔊 음성으로 듣기'; btn.classList.remove('speaking'); return;
+  }
+  const utter = new SpeechSynthesisUtterance(fullBriefingText);
+  utter.lang = 'ko-KR'; utter.rate = 0.95;
+  const v = window.speechSynthesis.getVoices().find(v => v.lang.startsWith('ko'));
+  if (v) utter.voice = v;
+  utter.onend = utter.onerror = () => {
+    isSpeaking = false; btn.textContent = '🔊 음성으로 듣기'; btn.classList.remove('speaking');
+  };
+  window.speechSynthesis.speak(utter);
+  isSpeaking = true; btn.textContent = '⏹ 음성 중지'; btn.classList.add('speaking');
+}
+window.speechSynthesis.onvoiceschanged = () => {};
+</script>
+</body>
+</html>
