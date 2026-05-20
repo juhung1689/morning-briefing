@@ -1,0 +1,8 @@
+{
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/api/weather", "destination": "/api/weather.js" },
+    { "source": "/api/stocks", "destination": "/api/stocks.js" },
+    { "source": "/api/news", "destination": "/api/news.js" }
+  ]
+}
