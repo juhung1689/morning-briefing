@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아침 브리핑</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: -apple-system, 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  .container { max-width: 640px; margin: 0 auto; }
+  h1 {
+    font-size: 1.2rem;
+    color: #7d8590;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #7d8590;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+  /* 날씨 */
+  .weather-main {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .temp-big { font-size: 3rem; font-weight: 700; color: #e6edf3; }
+  .temp-feels { font-size: 0.9rem; color: #7d8590; }
+  .weather-desc { color: #7d8590; font-size: 0.9rem; margin-bottom: 12px; }
+  .weather-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: #7d8590;
+    margin-bottom: 16px;
+  }
+  .outfit-card {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #c9d1d9;
+    margin-bottom: 10px;
+  }
+  .bike-verdict {
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .bike-verdict.ok { background: #0d2818; color: #3fb950; border: 1px solid #238636; }
+  .bike-verdict.caution { background: #2d1f00; color: #d29922; border: 1px solid #9e6a03; }
+  .bike-verdict.ng { background: #2d0f0f; color: #f85149; border: 1px solid #da3633; }
+  /* 주식 */
+  .indices-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .index-card {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .index-name { font-size: 0.7rem; color: #7d8590; margin-bottom: 4px; }
+  .index-price { font-size: 1rem; font-weight: 600; margin-bottom: 2px; }
+  .index-change { font-size: 0.8rem; }
+  .stocks-list { display: flex; flex-direction: column; gap: 10px; }
+  .stock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  .stock-left { display: flex; flex-direction: column; gap: 2px; }
+  .stock-name { font-size: 0.9rem; font-weight: 600; }
+  .stock-ticker { font-size: 0.75rem; color: #7d8590; }
+  .stock-right { text-align: right; }
+  .stock-price { font-size: 1rem; font-weight: 600; }
+  .stock-change { font-size: 0.8rem; }
+  .up { color: #3fb950; }
+  .down { color: #f85149; }
+  .flat { color: #7d8590; }
+  .divider {
+    border: none;
+    border-top: 1px solid #30363d;
+    margin: 14px 0;
+  }
+  /* TTS */
+  #btnSpeak {
+    width: 100%;
+    padding: 14px;
+    background: #21262d;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 8px;
+  }
+  #btnSpeak:hover { background: #30363d; }
+  #btnSpeak.speaking { background: #0d2818; border-color: #238636; color: #3fb950; }
+  .status {
+    font-size: 0.8rem;
+    color: #7d8590;
+    text-align: center;
+    min-height: 1.2em;
+  }
+  .loading { color: #7d8590; font-size: 0.85rem; }
+  @media (max-width: 400px) {
+    .indices-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .index-card { padding: 8px; }
+    .index-price { font-size: 0.85rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>☀️ 아침 브리핑 <span id="now" style="margin-left:auto;font-size:0.85rem;"></span></h1>
+
+  <button id="btnSpeak" onclick="toggleSpeak()">🔊 음성으로 듣기</button>
+  <div class="status" id="status"></div>
+
+  <div class="section" id="weatherSection">
+    <div class="section-title">🌤 날씨 · 옷차림</div>
+    <div class="loading">날씨 불러오는 중...</div>
+  </div>
+
+  <div class="section" id="stockSection">
+    <div class="section-title">📈 미국 주식</div>
+    <div class="loading">시세 불러오는 중...</div>
+  </div>
+</div>
+
+<script>
+const BASE = '';
+let fullBriefingText = '';
+let isSpeaking = false;
+
+// 현재 시각
+(function() {
+  const el = document.getElementById('now');
+  function tick() {
+    const d = new Date();
+    el.textContent = d.toLocaleString('ko-KR', { month:'numeric', day:'numeric', weekday:'short', hour:'2-digit', minute:'2-digit' });
+  }
+  tick(); setInterval(tick, 60000);
+})();
+
+function colorClass(v) {
+  if (v === null || v === undefined) return 'flat';
+  return v > 0 ? 'up' : v < 0 ? 'down' : 'flat';
+}
+function arrow(v) {
+  if (v === null || v === undefined) return '';
+  return v > 0 ? '▲' : v < 0 ? '▼' : '─';
+}
+function fmt(v) {
+  if (v === null || v === undefined) return '-';
+  const sign = v >= 0 ? '+' : '';
+  return `${arrow(v)} ${sign}${v.toFixed(2)}%`;
+}
+
+// 날씨
+async function loadWeather() {
+  const sec = document.getElementById('weatherSection');
+  try {
+    const res = await fetch(`${BASE}/api/weather`);
+    const w = await res.json();
+    const outfit = buildOutfit(w);
+
+    sec.innerHTML = `
+      <div class="section-title">🌤 날씨 · 옷차림</div>
+      <div class="weather-main">
+        <div class="temp-big">${w.temp}°</div>
+        <div class="temp-feels">체감 ${w.feels}°</div>
+      </div>
+      <div class="weather-desc">${w.desc}</div>
+      <div class="weather-meta">
+        <span>💧 습도 ${w.humidity}%</span>
+        <span>💨 풍속 ${w.wind}m/s</span>
+      </div>
+      <div class="outfit-card">👔 ${outfit.layers}<br><small>${outfit.extra}</small></div>
+      <div class="bike-verdict ${outfit.bikeClass}">${outfit.bikeIcon} ${outfit.bikeText}</div>
+    `;
+    return w;
+  } catch(e) {
+    sec.innerHTML = `<div class="section-title">🌤 날씨</div><div class="status">날씨 로드 실패</div>`;
+    return null;
+  }
+}
+
+function buildOutfit(w) {
+  const layers = w.temp <= 0 ? '패딩, 내복, 두꺼운 장갑'
+    : w.temp <= 5 ? '패딩 + 장갑'
+    : w.temp <= 10 ? '윈드브레이커 + 긴팔 레이어'
+    : w.temp <= 15 ? '얇은 자켓 또는 긴팔'
+    : w.temp <= 20 ? '긴팔 + 얇은 바람막이'
+    : w.temp <= 25 ? '반팔 또는 얇은 긴팔'
+    : '반팔, 자외선 차단 필수';
+
+  const extra = w.isRain ? '🌧 비 예보 — <strong>우비</strong> 필수'
+    : w.wind > 7 ? '💨 강풍 주의 — 방풍 레이어 추천'
+    : w.humidity > 80 ? '💧 습도 높음 — 흡습 소재 추천'
+    : '컨디션 양호';
+
+  let bikeClass, bikeIcon, bikeText;
+  if (w.isRain || w.rain > 2) {
+    bikeClass = 'ng'; bikeIcon = '🚫';
+    bikeText = '오늘 자전거 출근 불가 — 비';
+  } else if (w.wind > 10) {
+    bikeClass = 'ng'; bikeIcon = '🚫';
+    bikeText = '오늘 자전거 출근 불가 — 강풍';
+  } else if (w.rain > 0 || w.wind > 7 || w.humidity > 90) {
+    bikeClass = 'caution'; bikeIcon = '⚠️';
+    bikeText = '자전거 출근 주의 — 컨디션 확인 후 결정';
+  } else {
+    bikeClass = 'ok'; bikeIcon = '✅';
+    bikeText = '자전거 출근 가능 — 컨디션 좋습니다';
+  }
+  return { layers, extra, bikeClass, bikeIcon, bikeText };
+}
+
+// 주식
+async function loadStocks() {
+  const sec = document.getElementById('stockSection');
+  try {
+    const res = await fetch(`${BASE}/api/stocks`);
+    const { indices, stocks } = await res.json();
+
+    const indicesHtml = indices.map(i => {
+      const cc = colorClass(i.change);
+      const price = i.price ?? '-';
+      const chg = i.change !== null ? `${arrow(i.change)} ${i.change >= 0 ? '+' : ''}${i.change.toFixed(2)}%` : '-';
+      return `
+        <div class="index-card">
+          <div class="index-name">${i.name}</div>
+          <div class="index-price ${cc}">${price}</div>
+          <div class="index-change ${cc}">${chg}</div>
+        </div>`;
+    }).join('');
+
+    const stocksHtml = stocks.map(s => {
+      const cc = colorClass(s.change);
+      const chg = s.change !== null ? `${arrow(s.change)} ${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}%` : '-';
+      return `
+        <div class="stock-row">
+          <div class="stock-left">
+            <div class="stock-name">${s.name}</div>
+            <div class="stock-ticker">${s.symbol}</div>
+          </div>
+          <div class="stock-right">
+            <div class="stock-price">$${s.price ?? '-'}</div>
+            <div class="stock-change ${cc}">${chg}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    sec.innerHTML = `
+      <div class="section-title">📈 미국 주식</div>
+      <div class="indices-grid">${indicesHtml}</div>
+      <hr class="divider">
+      <div class="stocks-list">${stocksHtml}</div>
+    `;
+    return { indices, stocks };
+  } catch(e) {
+    sec.innerHTML = `<div class="section-title">📈 미국 주식</div><div class="status">시세 로드 실패</div>`;
+    return null;
+  }
+}
+
+// TTS
+function buildTTS(weather, stockData) {
+  let t = `안녕하세요. 아침 브리핑입니다. `;
+  if (weather) {
+    t += `현재 기온 ${weather.temp}도, 체감 ${weather.feels}도, 습도 ${weather.humidity}%, 풍속 초속 ${weather.wind}미터. `;
+  }
+  if (stockData) {
+    const { indices, stocks } = stockData;
+    t += `미국 주식입니다. `;
+    indices.forEach(i => {
+      if (i.change !== null) t += `${i.name} ${i.change >= 0 ? '플러스' : '마이너스'} ${Math.abs(i.change).toFixed(2)}퍼센트. `;
+    });
+    stocks.forEach(s => {
+      if (s.price) t += `${s.name} ${s.price}달러, ${s.change >= 0 ? '플러스' : '마이너스'} ${Math.abs(s.change).toFixed(2)}퍼센트. `;
+    });
+  }
+  fullBriefingText = t;
+}
+
+function toggleSpeak() {
+  const btn = document.getElementById('btnSpeak');
+  const st = document.getElementById('status');
+  if (isSpeaking) {
+    window.speechSynthesis.cancel();
+    isSpeaking = false;
+    btn.textContent = '🔊 음성으로 듣기';
+    btn.classList.remove('speaking');
+    st.textContent = '';
+    return;
+  }
+  if (!fullBriefingText) { st.textContent = '데이터 로드 중입니다. 잠시 후 다시 시도해주세요.'; return; }
+  const utter = new SpeechSynthesisUtterance(fullBriefingText);
+  utter.lang = 'ko-KR'; utter.rate = 0.95;
+  const voices = window.speechSynthesis.getVoices();
+  const v = voices.find(v => v.lang.startsWith('ko'));
+  if (v) utter.voice = v;
+  utter.onend = utter.onerror = () => {
+    isSpeaking = false;
+    btn.textContent = '🔊 음성으로 듣기';
+    btn.classList.remove('speaking');
+    st.textContent = '';
+  };
+  window.speechSynthesis.speak(utter);
+  isSpeaking = true;
+  btn.textContent = '⏹ 음성 중지';
+  btn.classList.add('speaking');
+}
+
+window.speechSynthesis.onvoiceschanged = () => {};
+
+// 초기화
+(async function() {
+  const [weather, stockData] = await Promise.all([loadWeather(), loadStocks()]);
+  buildTTS(weather, stockData);
+})();
+</script>
+</body>
+</html>
